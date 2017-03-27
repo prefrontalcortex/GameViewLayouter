@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Name: GameViewLayout
   m_EditorClassIdentifier: 
   viewCount: 2
-  viewTable: 00000000010000000200000003000000040000000500000006000000
+  viewTable: ffffffff02000000ffffffffffffffffffffffffffffffffffffffff

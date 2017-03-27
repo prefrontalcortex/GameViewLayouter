@@ -9,7 +9,7 @@ namespace Klak
 
         // This array contains the display indices assigned to each view:
         // the (n)th view is to show the (viewTable[n])th display.
-        [SerializeField] public int[] viewTable = { 0, 1, 2, 3, 4, 5, 6 };
+        [SerializeField] public int[] viewTable = { -1, -1, -1, -1, -1, -1, -1 };
 
         /*
         [MenuItem("Assets/Create/Game View Layout Table")]
