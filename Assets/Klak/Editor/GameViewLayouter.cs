@@ -80,8 +80,9 @@ namespace Klak
                 );
                 
                 // display monitor info below dropdown
-                if(displayInfoAvailable)
+                if(displayInfoAvailable) { 
                     EditorGUILayout.LabelField(displayInfo[i].MonitorArea.ToString(), EditorStyles.miniLabel);
+                }
             }
             for(var i = viewCount; i < viewTable.arraySize; i++)
             {
@@ -127,7 +128,6 @@ namespace Klak
         {
             foreach (EditorWindow view in Resources.FindObjectsOfTypeAll(GameViewType))
             {
-                Debug.Log("view has " + view.maxSize.ToString() + " - " + view.minSize.ToString() + view.position.ToString());
                 view.Close();
             }
         }
