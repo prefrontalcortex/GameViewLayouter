@@ -56,8 +56,8 @@ public class MonitorHelper : MonoBehaviour {
             PhysicalArea.right = x + width;
             PhysicalArea.bottom = y + height;
 
-            scaleFactor = width / (float) (MonitorArea.right - MonitorArea.left);
-
+            // scaleFactor = Mathf.RoundToInt((width / (float) (MonitorArea.right - MonitorArea.left)) * 4) / 4f;
+            scaleFactor = width / (float)(MonitorArea.right - MonitorArea.left);
             // unity is only main screen dpi aware.
             // that means: everything is in the scale of the main screen.
             // left top point is always correct (?) - width and height have to be scaled.
@@ -78,7 +78,6 @@ public class MonitorHelper : MonoBehaviour {
     {
         // for debugging purposes
         displays = GetDisplays();
-        AddAdditionalInfos(displays);
 
         foreach (var dv in displays)
         {
@@ -101,6 +100,7 @@ public class MonitorHelper : MonoBehaviour {
                 // for (uint id = 0; EnumDisplayDevices(null, id, ref d, 0); id++)
                 EnumDisplayDevices(null, (uint) id, ref d, 0);
                 
+                /*
                 Debug.Log(
                     String.Format("{0}, {1}, {2}, {3}, {4}, {5}",
                                 id,
@@ -111,6 +111,7 @@ public class MonitorHelper : MonoBehaviour {
                                 d.DeviceKey
                                 )
                                 );
+                */
                 d.cb = Marshal.SizeOf(d);
 
                 if ((d.StateFlags & DisplayDeviceStateFlags.AttachedToDesktop) == DisplayDeviceStateFlags.AttachedToDesktop)
@@ -156,13 +157,15 @@ public class MonitorHelper : MonoBehaviour {
                 }
                 return true;
             }, IntPtr.Zero);
+
+        AddAdditionalInfos(col);
+
         return col;
     }
 
     public static DisplayInfo GetDisplay(int index)
     {
         var displays = GetDisplays();
-        AddAdditionalInfos(displays);
 
         if(displays != null && index >= 0 && index < displays.Count)
         {

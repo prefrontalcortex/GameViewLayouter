@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using System;
 using System.Reflection;
+using System.Threading;
 
 namespace Klak
 {
@@ -81,7 +82,7 @@ namespace Klak
                 
                 // display monitor info below dropdown
                 if(displayInfoAvailable) { 
-                    EditorGUILayout.LabelField(displayInfo[i].MonitorArea.ToString(), EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField(displayInfo[i].MonitorArea.ToString() + ", " + displayInfo[i].scaleFactor + "x", EditorStyles.miniLabel);
                 }
             }
             for(var i = viewCount; i < viewTable.arraySize; i++)
@@ -128,6 +129,7 @@ namespace Klak
         {
             foreach (EditorWindow view in Resources.FindObjectsOfTypeAll(GameViewType))
             {
+                // Debug.Log("pos: " + view.position + "  size: " + view.maxSize);
                 view.Close();
             }
         }
@@ -140,28 +142,38 @@ namespace Klak
             var firstDisplayInfo = MonitorHelper.GetDisplay(0);
             var displayInfo = MonitorHelper.GetDisplay(screenIndex);
             var monitorArea = displayInfo.MonitorArea;
-            //monitorArea.left = (int) (monitorArea.left / firstDisplayInfo.scaleFactor);
-            //monitorArea.right = (int)(monitorArea.right / firstDisplayInfo.scaleFactor);
-            //monitorArea.top = (int)(monitorArea.top / firstDisplayInfo.scaleFactor);
-            //monitorArea.bottom = (int)(monitorArea.bottom / firstDisplayInfo.scaleFactor);
-
-            Debug.Log(displayInfo.scaleFactor + " ,  " + firstDisplayInfo.scaleFactor);
 
             float relativeScaleFactor = displayInfo.scaleFactor / firstDisplayInfo.scaleFactor;
-
-            // we need to get the scaled rect based on the main screen scale factor and the target screen scale factor.
             
-            var origin = new Vector2(monitorArea.left, -kMenuHeight);
-            var size = new Vector2(monitorArea.right - monitorArea.left, monitorArea.bottom - monitorArea.top + kMenuHeight);
-            size.x *= relativeScaleFactor;
-            size.y *= relativeScaleFactor;
+            // we need to get the scaled rect based on the main screen scale factor and the target screen scale factor.
+            var origin = new Vector2(monitorArea.left, monitorArea.top - kMenuHeight);
+            var size = new Vector2((monitorArea.right - monitorArea.left) * relativeScaleFactor, (monitorArea.bottom - monitorArea.top + kMenuHeight) * relativeScaleFactor);
+
+            if(relativeScaleFactor < 1)
+            {
+                // if the main screen has a higher scale than the others,
+                // origin changes as well.
+                origin.x *= relativeScaleFactor;
+                origin.y = monitorArea.top * relativeScaleFactor - kMenuHeight;
+            }
+
+            //round to int values, otherwise the window position gets reset
+            origin.x = Mathf.FloorToInt(origin.x);
+            origin.y = Mathf.FloorToInt(origin.y);
+            size.x = Mathf.FloorToInt(size.x);
+            size.y = Mathf.FloorToInt(size.y);
 
             // not sure why multiple sets are necessary, but otherwise the menu height offset does not work correctly.
-            view.position = new Rect(origin, size);
+            var posRect = new Rect(origin, size);
+            view.position = posRect;
             view.minSize = view.maxSize = size;
-            view.position = new Rect(origin, size);
+            view.position = posRect;
             view.minSize = view.maxSize = size;
-            view.position = new Rect(origin, size);
+            view.position = posRect;
+            view.minSize = view.maxSize = size;
+            view.position = posRect;
+
+            EditorUtility.SetDirty(view);
         }
 
         // Instantiate and layout game views based on the setting.
@@ -179,6 +191,7 @@ namespace Klak
                 if (_table.viewTable[i] == -1) continue; // "None", display no screen
 
                 var view = (EditorWindow)ScriptableObject.CreateInstance(GameViewType);
+                
                 view.Show();
 
                 ChangeTargetDisplay(view, _table.viewTable[i]);
