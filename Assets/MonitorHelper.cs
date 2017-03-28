@@ -8,6 +8,7 @@ public class MonitorHelper : MonoBehaviour {
 
     delegate bool EnumMonitorsDelegate(IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData);
 
+    [System.Serializable]
     [StructLayout(LayoutKind.Sequential)]
     public struct Rect
     {
@@ -25,83 +26,108 @@ public class MonitorHelper : MonoBehaviour {
     /// <summary>
     /// The struct that contains the display information
     /// </summary>
+    [System.Serializable]
     public class DisplayInfo
     {
-        public string Availability { get; set; }
-        public string ScreenHeight { get; set; }
-        public string ScreenWidth { get; set; }
-        public Rect MonitorArea { get; set; }
-        public Rect WorkArea { get; set; }
+        public string Availability;
+        public string ScreenHeight;
+        public string ScreenWidth;
+
+        public Rect MonitorArea;
+        public Rect WorkArea;
+
+        public DEVMODE devMode;
+        public DISPLAY_DEVICE displayDevice;
+
+        public Rect PhysicalArea;
+        public float scaleFactor;
+
+        public void Process()
+        {
+            PhysicalArea = new Rect();
+
+            var width = devMode.dmPelsWidth;
+            var height = devMode.dmPelsHeight;
+            var x = devMode.dmPositionX;
+            var y = devMode.dmPositionY;
+
+            PhysicalArea.left = x;
+            PhysicalArea.top = y;
+            PhysicalArea.right = x + width;
+            PhysicalArea.bottom = y + height;
+
+            scaleFactor = width / (float) (MonitorArea.right - MonitorArea.left);
+
+            // unity is only main screen dpi aware.
+            // that means: everything is in the scale of the main screen.
+            // left top point is always correct (?) - width and height have to be scaled.
+        }
     }
 
     /// <summary>
     /// Collection of display information
     /// </summary>
+    [System.Serializable]
     public class DisplayInfoCollection : List<DisplayInfo>
     {
     }
-
-    public List<DEVMODE> devmodes = new List<DEVMODE>();
     
+    public List<DisplayInfo> displays;
+
     void Start()
     {
         // for debugging purposes
-        var ds = GetDisplays();
-        foreach(var dv in ds)
+        displays = GetDisplays();
+        AddAdditionalInfos(displays);
+
+        foreach (var dv in displays)
         {
             print("found a screen");
             print(dv.ScreenWidth + "x" + dv.ScreenHeight);
             print("monitor area: " + dv.MonitorArea);
         }
+    }
 
-        DEVMODE vDevMode = new DEVMODE();
-        /*
-        int i = -2;
-        while (EnumDisplaySettings(null, i, ref vDevMode))
-        {
-            Debug.Log(string.Format("Width:{0} Height:{1} Color:{2} Frequency:{3}",
-                vDevMode.dmPelsWidth,
-                vDevMode.dmPelsHeight,
-                1 << vDevMode.dmBitsPerPel, vDevMode.dmDisplayFrequency));
-            
-            i++;
+    public static void AddAdditionalInfos(List<DisplayInfo> displayInfo)
+    {
+        for(int id = 0; id < displayInfo.Count; id++)
+        { 
+            DEVMODE vDevMode = new DEVMODE();
+            DISPLAY_DEVICE d = new DISPLAY_DEVICE();
 
-            devmodes.Add(vDevMode);
-
-            // break;
-        }
-        */
-
-        DISPLAY_DEVICE d = new DISPLAY_DEVICE();
-        d.cb = Marshal.SizeOf(d);
-        try
-        {
-            for (uint id = 0; EnumDisplayDevices(null, id, ref d, 0); id++)
+            d.cb = Marshal.SizeOf(d);
+            try
             {
+                // for (uint id = 0; EnumDisplayDevices(null, id, ref d, 0); id++)
+                EnumDisplayDevices(null, (uint) id, ref d, 0);
+                
                 Debug.Log(
                     String.Format("{0}, {1}, {2}, {3}, {4}, {5}",
-                             id,
-                             d.DeviceName,
-                             d.DeviceString,
-                             d.StateFlags,
-                             d.DeviceID,
-                             d.DeviceKey
-                             )
-                              );
+                                id,
+                                d.DeviceName,
+                                d.DeviceString,
+                                d.StateFlags,
+                                d.DeviceID,
+                                d.DeviceKey
+                                )
+                                );
                 d.cb = Marshal.SizeOf(d);
 
-                if((d.StateFlags & DisplayDeviceStateFlags.AttachedToDesktop) == DisplayDeviceStateFlags.AttachedToDesktop)
-                { 
+                if ((d.StateFlags & DisplayDeviceStateFlags.AttachedToDesktop) == DisplayDeviceStateFlags.AttachedToDesktop)
+                {
                     EnumDisplaySettings(d.DeviceName, -1, ref vDevMode);
-                    devmodes.Add(vDevMode);
+                    // devmodes.Add(vDevMode);
+                    displayInfo[id].devMode = vDevMode;
                 }
+
+                displayInfo[id].displayDevice = d;
+                displayInfo[id].Process();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(String.Format("{0}", ex.ToString()));
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine(String.Format("{0}", ex.ToString()));
-        }
-
     }
 
     /// <summary>
@@ -136,6 +162,8 @@ public class MonitorHelper : MonoBehaviour {
     public static DisplayInfo GetDisplay(int index)
     {
         var displays = GetDisplays();
+        AddAdditionalInfos(displays);
+
         if(displays != null && index >= 0 && index < displays.Count)
         {
             return displays[index];
