@@ -41,6 +41,7 @@ public class MonitorHelper : MonoBehaviour {
 
         public Rect PhysicalArea;
         public float scaleFactor;
+        public string DeviceName;
 
         public void Process()
         {
@@ -97,27 +98,13 @@ public class MonitorHelper : MonoBehaviour {
             d.cb = Marshal.SizeOf(d);
             try
             {
-                // for (uint id = 0; EnumDisplayDevices(null, id, ref d, 0); id++)
-                EnumDisplayDevices(null, (uint) id, ref d, 0);
+                EnumDisplayDevices(displayInfo[id].DeviceName, 0, ref d, 0);
                 
-                /*
-                Debug.Log(
-                    String.Format("{0}, {1}, {2}, {3}, {4}, {5}",
-                                id,
-                                d.DeviceName,
-                                d.DeviceString,
-                                d.StateFlags,
-                                d.DeviceID,
-                                d.DeviceKey
-                                )
-                                );
-                */
                 d.cb = Marshal.SizeOf(d);
 
                 if ((d.StateFlags & DisplayDeviceStateFlags.AttachedToDesktop) == DisplayDeviceStateFlags.AttachedToDesktop)
                 {
-                    EnumDisplaySettings(d.DeviceName, -1, ref vDevMode);
-                    // devmodes.Add(vDevMode);
+                    EnumDisplaySettings(displayInfo[id].DeviceName, -1, ref vDevMode);
                     displayInfo[id].devMode = vDevMode;
                 }
 
@@ -139,11 +126,14 @@ public class MonitorHelper : MonoBehaviour {
     {
         DisplayInfoCollection col = new DisplayInfoCollection();
 
+        try { 
         EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
             delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData)
             {
-                MonitorInfo mi = new MonitorInfo();
+                MonitorInfoEx mi = new MonitorInfoEx();
+                mi.Init();
                 mi.size = Marshal.SizeOf(mi);
+                mi.size = 72;
                 bool success = GetMonitorInfo(hMonitor, ref mi);
                 if (success)
                 {
@@ -153,13 +143,22 @@ public class MonitorHelper : MonoBehaviour {
                     di.MonitorArea = mi.monitor;
                     di.WorkArea = mi.work;
                     di.Availability = mi.flags.ToString();
+                    di.DeviceName = mi.DeviceName;
                     col.Add(di);
+                }
+                else
+                {
+                    Debug.Log("getting monitor info failed");
                 }
                 return true;
             }, IntPtr.Zero);
 
         AddAdditionalInfos(col);
-
+        }
+        catch(System.Exception e)
+        {
+            Debug.LogError(e);
+        }
         return col;
     }
 
@@ -185,20 +184,29 @@ public class MonitorHelper : MonoBehaviour {
     }
     
     [DllImport("user32.dll")]
-    static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip,
-       EnumMonitorsDelegate lpfnEnum, IntPtr dwData);
+    static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip, EnumMonitorsDelegate lpfnEnum, IntPtr dwData);
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct MonitorInfo
+    private const int CCHDEVICENAME = 32;
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    public struct MonitorInfoEx
     {
         public int size;
         public Rect monitor;
         public Rect work;
         public uint flags;
+        
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCHDEVICENAME)]
+        public string DeviceName;
+        
+        public void Init()
+        {
+            this.size = 40 + 1 * CCHDEVICENAME;
+            this.DeviceName = string.Empty;
+        }
     }
 
     [DllImport("user32.dll")]
-    static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo lpmi);
+    static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfoEx lpmi);
     
     // display settings for scale
 

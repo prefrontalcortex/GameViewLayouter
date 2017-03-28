@@ -82,6 +82,7 @@ namespace Klak
                 
                 // display monitor info below dropdown
                 if(displayInfoAvailable) { 
+                    EditorGUILayout.LabelField(displayInfo[i].displayDevice.DeviceString, EditorStyles.miniLabel);
                     EditorGUILayout.LabelField(displayInfo[i].MonitorArea.ToString() + ", scale: " + (displayInfo[i].scaleFactor * 100) + "%", EditorStyles.miniLabel);
                 }
             }
