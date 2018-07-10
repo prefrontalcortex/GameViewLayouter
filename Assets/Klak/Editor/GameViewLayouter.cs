@@ -96,11 +96,14 @@ namespace Klak
             // Function buttons
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.Space();
-            if (GUILayout.Button("Layout")) LayoutViews();
+            if (GUILayout.Button("Layout (Ctrl+Shift+Q)")) LayoutViews();
             EditorGUILayout.Space();
-            if (GUILayout.Button("Close All")) CloseAllViews();
+            if (GUILayout.Button("Close All (Ctrl+Shift+W)")) CloseAllViews();
             EditorGUILayout.Space();
             EditorGUILayout.EndHorizontal();
+
+            if (Event.current.isKey && Event.current.keyCode == KeyCode.Q && Event.current.shift && Event.current.control)
+                LayoutViews();
 
             EditorGUILayout.EndVertical();
 
@@ -166,6 +169,13 @@ namespace Klak
 
             // not sure why multiple sets are necessary, but otherwise the menu height offset does not work correctly.
             var posRect = new Rect(origin, size);
+
+            view.position = posRect;
+            view.minSize = view.maxSize = size;
+            view.position = posRect;
+            view.minSize = view.maxSize = size;
+            view.position = posRect;
+            view.minSize = view.maxSize = size;
             view.position = posRect;
             view.minSize = view.maxSize = size;
             view.position = posRect;

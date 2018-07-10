@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -11,5 +11,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6880cb68966c8d8439deaa3e4103dc8c, type: 3}
   m_Name: GameViewLayout
   m_EditorClassIdentifier: 
-  viewCount: 2
-  viewTable: ffffffff00000000ffffffffffffffffffffffffffffffffffffffff
+  viewCount: 1
+  viewTable: 00000000ffffffffffffffffffffffffffffffffffffffffffffffff
